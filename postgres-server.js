@@ -56,7 +56,7 @@ const jsonParser = bodyParser.json({limit: '1mb'});
 app.use(corsSetup);
 
 
-app.get('/', (req, res) => backendServerLogic.renderDefaultWebPage(req, res)); 
+app.get('/', (req, res) => backendServerLogic.renderDefaultWebPage( res)); 
 
 app.post('/login', jsonParser, (req, res) => backendServerLogic.login(req, res));
 
