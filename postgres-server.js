@@ -42,12 +42,16 @@ function getDatabaseString() {
 }
 
 // configure the back-end logic
+logger.info(`connecting to database`);
+
 backendServerLogic.config({
 	database: databaseAdapter.connect(getDatabaseString()),
 	logger: logger
 })
 
 const whitleListDomain = ['http://localhost:8080', '213.127.49.114'];
+
+logger.info(`configuring CORS`);
 
 const corsSetup = cors({
 	origin: function(origin, callback){
@@ -72,7 +76,10 @@ const jsonParser = bodyParser.json({limit: '1mb'});
 app.use(corsSetup);
 
 
-app.get('/', (req, res) => backendServerLogic.renderDefaultWebPage( res)); 
+app.get('/', (req, res) => {
+	logger.info(`app.get / against ${backendServerLogic}`);
+	backendServerLogic.renderDefaultWebPage(res)
+}); 
 
 app.post('/login', jsonParser, (req, res) => backendServerLogic.login(req, res));
 
@@ -85,5 +92,5 @@ app.post('/post-order', jsonParser, (req, res) => backendServerLogic.postOrder(r
 backendServerLogic.start();
 
 // start express
-app.listen(3000, () => console.log('Server running on port 3000!'));
+app.listen(3000, () => logger.info('Server running on port 3000!'));
 

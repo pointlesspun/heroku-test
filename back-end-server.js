@@ -56,7 +56,13 @@ exports.start = function() {
  * @param response 
  */
 exports.renderDefaultWebPage = function (response)  {
-	response.send('Laurette - Server, thesis v0.001');
+	try { 
+		_logger.info(`renderDefaultWebPage with response ${response}`);
+		response.send('Laurette - Server, thesis v0.001');
+	}
+	catch( exception ) {
+		_logger.info(`renderDefaultWebPage caught exception: ${exception}`);
+	}
 }
 
 /** 
