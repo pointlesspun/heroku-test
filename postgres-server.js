@@ -5,6 +5,7 @@ const winston = require('winston');
 const { MESSAGE } = require("triple-beam");
 const databaseAdapter = require('./postgres-adapter');
 const backendServerLogic = require('./back-end-server');
+var os = require('os');
 
 const logger = winston.createLogger({
 	level: 'info',
@@ -25,9 +26,24 @@ const logger = winston.createLogger({
 	]
   });
 
+function getDatabaseString() {
+	var connectionString = "";
+	const hostName = os.hostname();
+	
+	if(hostName.indexOf("local") > -1 || hostName.indexOf("DESKTOP") > -1) {		
+		connectionString = 'postgresql://postgres:admin@localhost:5432/sessions';
+	} else {
+		connectionString = process.env.DATABASE_URL;
+	}
+
+	logger.info(`@${hostName} Connecting to db via ${connectionString}`);
+
+	return connectionString; 
+}
+
 // configure the back-end logic
 backendServerLogic.config({
-	database: databaseAdapter.connect("sessions"),
+	database: databaseAdapter.connect(getDatabaseString()),
 	logger: logger
 })
 

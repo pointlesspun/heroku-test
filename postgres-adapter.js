@@ -1,15 +1,9 @@
-const {Client} = require('pg');
+const postgres = require('pg');
 
 var _database;
 
-exports.connect = function(name) {
-    _database = new Client({
-		user: 'postgres',
-		host: '127.0.0.1',
-		database: name,
-		password: 'admin',
-		port: 5432
-	});
+exports.connect = function(connectionString) {
+	_database = new postgres.Pool({connectionString:connectionString});
 	_database.connect();
     return exports;
 }
