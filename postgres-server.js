@@ -75,7 +75,7 @@ const app = express();
 const jsonParser = bodyParser.json({limit: '1mb'});
 
 // setup Cross Domain calls 
-// app.use(corsSetup);
+//app.use(corsSetup);
 
 app.get('/', (req, res) => {
 	logger.info(`app.get / against ${backendServerLogic}`);
@@ -93,5 +93,6 @@ app.post('/post-order', jsonParser, (req, res) => backendServerLogic.postOrder(r
 backendServerLogic.start();
 
 // start express
-app.listen(3000, () => logger.info('Server running on port 3000!'));
+app.set( 'port', ( process.env.PORT || 3000 ));
+app.listen(app.get( 'port' ), () => logger.info('Server running on port ' + app.get( 'port' )));
 
