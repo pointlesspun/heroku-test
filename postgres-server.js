@@ -55,14 +55,16 @@ logger.info(`configuring CORS`);
 
 const corsSetup = cors({
 	origin: function(origin, callback){
-	  // allow requests with no origin 
-	  // (like mobile apps or curl requests)
-	  if(!origin) return callback(null, true);
-	  if(whitleListDomain.indexOf(origin) === -1){
-		var msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-		return callback(new Error(msg), false);
-	  }
-	  return callback(null, true);
+		logger.info(`origin check against ${origin}`);
+
+
+	  	if(!origin) return callback(null, true);
+	  	if(whitleListDomain.indexOf(origin) === -1){
+			var msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+			return callback(new Error(msg), false);
+		  }
+	
+		return callback(null, true);
 	}
   });
 
@@ -73,8 +75,7 @@ const app = express();
 const jsonParser = bodyParser.json({limit: '1mb'});
 
 // setup Cross Domain calls 
-app.use(corsSetup);
-
+// app.use(corsSetup);
 
 app.get('/', (req, res) => {
 	logger.info(`app.get / against ${backendServerLogic}`);
