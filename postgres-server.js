@@ -45,7 +45,7 @@ function getDatabaseString() {
 logger.info(`connecting to database`);
 
 backendServerLogic.config({
-	database: databaseAdapter.connect(getDatabaseString()),
+	database: databaseAdapter.connect(getDatabaseString(), logger),
 	logger: logger
 })
 

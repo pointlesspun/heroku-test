@@ -1,11 +1,32 @@
 const postgres = require('pg');
 
 var _database;
+var _logger;
 
-exports.connect = function(connectionString) {
-	_database = new postgres.Pool({connectionString:connectionString});
-	_database.connect();
-    return exports;
+exports.connect = function(connectionString, logger) {
+	
+	_logger = logger || {
+		info : (str) => console.log(str),
+		error : (str) => console.log(str)
+	};
+	try {
+		_logger.info(`connecting to : "${connectionString}".`);
+		_database = new postgres.Pool({connectionString:connectionString});
+		_database.connect();
+	
+		_database.query('select NOW()', (err, res) => {
+			if (err) {
+				_logger.error(`cannot connect to database. error: ${err}`);
+			} else {
+				_logger.info(`connection to database established at: ${res.rows[0].now}`);
+			}
+		});
+	}
+	catch (exception) {
+		_logger.info(`cannot connect to database. caught exception: ${exception}`);
+	}
+
+	return exports;
 }
 
 /*
