@@ -5,8 +5,11 @@ const winston = require('winston');
 const { MESSAGE } = require("triple-beam");
 const databaseAdapter = require('./postgres-adapter');
 const backendServerLogic = require('./back-end-server');
-var os = require('os');
+const os = require('os');
 
+const _hostName = os.hostname();
+const _isLocalHost = _hostName.indexOf("local") > -1 || _hostName.indexOf("DESKTOP") > -1;
+	
 const logger = winston.createLogger({
 	level: 'info',
 	format: winston.format.json(),
@@ -26,17 +29,18 @@ const logger = winston.createLogger({
 	]
   });
 
+
+
 function getDatabaseString() {
 	var connectionString = "";
-	const hostName = os.hostname();
 	
-	if(hostName.indexOf("local") > -1 || hostName.indexOf("DESKTOP") > -1) {		
+	if(_isLocalHost) {		
 		connectionString = 'postgresql://postgres:admin@localhost:5432/sessions';
 	} else {
 		connectionString = process.env.DATABASE_URL;
 	}
 
-	logger.info(`@${hostName} Connecting to db via ${connectionString}`);
+	logger.info(`@${_hostName} Connecting to db via ${connectionString}`);
 
 	return connectionString; 
 }
@@ -75,7 +79,9 @@ const app = express();
 const jsonParser = bodyParser.json({limit: '1mb'});
 
 // setup Cross Domain calls 
-//app.use(corsSetup);
+if (_isLocalHost) {
+	app.use(corsSetup);
+}
 
 app.get('/', (req, res) => {
 	logger.info(`app.get / against ${backendServerLogic}`);

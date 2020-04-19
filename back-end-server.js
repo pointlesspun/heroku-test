@@ -58,7 +58,8 @@ exports.start = function() {
 exports.renderDefaultWebPage = function (response)  {
 	try { 
 		_logger.info(`renderDefaultWebPage with response ${response}`);
-		response.send('Laurette - Server, thesis v0.001');
+		response.send('Laurette - Server, thesis v0.001'
+					+ '<br> ' + Object.keys(_userCredentials).length + ' users logged in.');
 	}
 	catch( exception ) {
 		_logger.info(`renderDefaultWebPage caught exception: ${exception}`);
