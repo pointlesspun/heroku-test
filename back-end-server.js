@@ -4,6 +4,10 @@ var UserCredentials = require("./user-credentials.js");
 var WebOperation = require("./web-operation.js");
 var LoginResponse = require("./login-response.js");
 
+// web operation names
+const loginOperation = "login";
+const getUserOrdersOperation = "get-user-orders";
+
 // token can only live for 5 minutes
 const maxTokenAge = 60 * 5;
 
@@ -27,6 +31,8 @@ var _activeQueue;
 var _logger;
 var _sessionDb;
 
+var _admin;
+
 /**
  * Configure the back-end server. The config is required to contain a 'database' and optionally a 'logger'
  * and 'timeout' setting. Although this approach provides the start of decoupling the database implementation from
@@ -40,6 +46,7 @@ exports.config = function (config) {
 		};
 		_sessionDb = config.database;
 		_flushTimeout = config.timeout || 1000;
+		_admin = config.admin || { name : "admin", password : "__default" };
 	}
 }
 
@@ -57,7 +64,6 @@ exports.start = function() {
  */
 exports.renderDefaultWebPage = function (response)  {
 	try { 
-		_logger.info(`renderDefaultWebPage with response ${response}`);
 		response.send('Laurette - Server, thesis v0.001'
 					+ '<br> ' + Object.keys(_userCredentials).length + ' users logged in.');
 	}
@@ -73,8 +79,8 @@ exports.renderDefaultWebPage = function (response)  {
  * @param reponse httpResponse object used to respond to the client.
  */
 exports.login = function (request, response) {
-	_logger.info(getSource(request) + " logging in as " + request.body.user + ", " + request.body.password); 
-	_readQueue.push( new WebOperation("login",  request,  response ));
+	_logger.info(getOrigin(request) + " logging in as " + request.body.user + ", " + request.body.password); 
+	_readQueue.push( new WebOperation(loginOperation,  request,  response ));
 }
 
 /** 
@@ -84,7 +90,7 @@ exports.login = function (request, response) {
  */
 exports.logout = function (request, response) {
 
- 	_logger.info(getSource(request) + " logging out with " + request.body.token); 
+ 	_logger.info(getOrigin(request) + " logging out with " + request.body.token); 
 
 	if (_userCredentials[request.body.token]) {
 		delete _userCredentials[request.body.token];
@@ -99,7 +105,7 @@ exports.logout = function (request, response) {
  */
 exports.postOrder = function (request, response) {
 
-	_logger.info(getSource(request) + " post order with token = " + request.body.token); 
+	_logger.info(getOrigin(request) + " post order with token = " + request.body.token); 
 	
 	var credentials  = _userCredentials[request.body.token];
 	
@@ -134,6 +140,50 @@ exports.postOrder = function (request, response) {
 		sendErr(request, response, "invalid request or token provided (token="+ request.body.token +").");
 	}
 }
+
+/**
+ * Send by the user to keep the token alive as well as to check the server status
+ */
+exports.heartbeat = function(request, response) {
+	try {
+		_logger.info(getOrigin(request) + " heartbeat = " + request.body.token); 
+	
+		var credentials = _userCredentials[request.body.token];
+
+		if (credentials) {
+			// update the token's life
+			_userCredentials[request.body.token].date = new Date();
+
+			sendAck(response, request.body.timeStamp);
+		} else {
+			sendErr(request, response, `no user with token ${request.body.token} logged in.`);
+		}
+
+	} catch (exception) {
+		_logger.info(`heartbeat caught exception: ${exception}`);
+	}
+}
+
+/** 
+ * Requests the data from a specific user 
+ */
+exports.getUserOrders = function(request, response) {
+	try {
+		var userId = request.body.userId;
+		var adminName = request.body.adminName;
+		var password = request.body.password;
+		var origin = getOrigin(request);
+
+		_logger.info( `${origin} get user data with of user ${userId}, credentials = ${adminName}/${password}`); 
+	
+		if (adminName === _admin.name && password === _admin.password) {
+			_readQueue.push( new WebOperation(getUserOrdersOperation,  request,  response ));
+		} else {
+			sendErr(request, response, "credentials incorrect");
+		}
+	} catch (exception) {
+		_logger.info(`getUserData caught exception: ${exception}`);
+	}}
 
 // --- PRIVATE FUNCTIONS ----------------------------------------------------------------------------------------------
 
@@ -174,9 +224,9 @@ function flushReadQueue(queue, onCompleteCallback) {
 		for (var i = 0; i < queue.length; i++) {
 			const request = queue[i].request;
 			const response = queue[i].response;
-			
-			loginUser(request.body.user, request.body.password, (errCode, message) => {
-				
+			const operationName = queue[i].name; 
+
+			var operationCallback = (errCode, message) => {
 				if (errCode === 0) {
 					response.send(message);
 				} else {
@@ -187,7 +237,13 @@ function flushReadQueue(queue, onCompleteCallback) {
 				if (outstandingOperations <= 0) {
 					onCompleteCallback();
 				}
-			});
+			};
+
+			if (operationName === loginOperation) {
+				loginUser(request.body.user, request.body.password, operationCallback);
+			} else if (operationName === getUserOrdersOperation) {
+				retrieveUserOrders(request.body.userId, operationCallback);
+			}
 		}
 	} else {
 		onCompleteCallback();
@@ -241,7 +297,7 @@ function flushWriteQueue(queue, onCompleteCallback) {
  * @param {*} message 
  */
 function sendErr(request, response, message) {
-	_logger.error(getSource(request) + ", error " + message);
+	_logger.error(getOrigin(request) + ", error " + message);
 			
 	response.statusMessage = message;
 	response.status(400).end();
@@ -260,7 +316,7 @@ function sendAck(response, timeStamp) {
  * Try to extract the source of request  
  * @param {*} request 
  */
-function getSource(request) {
+function getOrigin(request) {
 	var originSource = request.headers['x-forwarded-for'];
 
 	if (!originSource) {
@@ -365,4 +421,15 @@ function generateToken(id, user, password) {
 		token += Math.floor(rng() * 10);	
 	}
 	return token;
+}
+
+function retrieveUserOrders(userId, callback) {
+
+	_sessionDb.getUserOrders(userId, (err, orders) => {
+		if (err) {
+			callback( -1, `db error (err=${err}).`);
+		}  else {
+			callback( 0, JSON.stringify(orders));	
+		}
+	});
 }

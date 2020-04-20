@@ -89,3 +89,15 @@ exports.insertValues = function(valuesCollection, callback) {
 		} 
 	});
 }
+
+exports.getUserOrders = function(userId, callback) {
+	const sqlCall = `select * from sessions where userId = ${userId}`;
+    
+    _database.query(sqlCall, (err, result) => {
+		if (err) {
+			callback(-1, "error while inserting values (err=" + err +").");
+		} else { 
+			callback(0, result.rows);
+		} 
+	});
+}

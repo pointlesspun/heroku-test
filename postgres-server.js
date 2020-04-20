@@ -78,15 +78,13 @@ const app = express();
 
 const jsonParser = bodyParser.json({limit: '1mb'});
 
-// setup Cross Domain calls 
+// setup Cross Domain calls - this is only relevant (at the time of writing) for the local host build
+// the Heroku build doesn't need this
 if (_isLocalHost) {
 	app.use(corsSetup);
 }
 
-app.get('/', (req, res) => {
-	logger.info(`app.get / against ${backendServerLogic}`);
-	backendServerLogic.renderDefaultWebPage(res)
-}); 
+app.get('/', (req, res) => backendServerLogic.renderDefaultWebPage(res)); 
 
 app.post('/login', jsonParser, (req, res) => backendServerLogic.login(req, res));
 
@@ -94,6 +92,9 @@ app.post('/logout', jsonParser, (req, res) => backendServerLogic.logout(req, res
 
 app.post('/post-order', jsonParser, (req, res) => backendServerLogic.postOrder(req, res));
 
+app.post('/heartbeat', jsonParser, (req, res) => backendServerLogic.heartbeat(req, res));
+
+app.post('/get-user-orders', jsonParser, (req, res) => backendServerLogic.getUserOrders(req, res));
 
 // start the server logic
 backendServerLogic.start();
