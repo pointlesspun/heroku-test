@@ -1,8 +1,12 @@
-const seedrandom = require('seedrandom');
 
 var UserCredentials = require("./user-credentials.js");
 var WebOperation = require("./web-operation.js");
 var LoginResponse = require("./login-response.js");
+
+var util = require("./util.js");
+
+// string length of a token
+const maxTokenLength = 8;
 
 // web operation names
 const loginOperation = "login";
@@ -10,9 +14,6 @@ const getUserOrdersOperation = "get-user-orders";
 
 // token can only live for 5 minutes
 const maxTokenAge = 60 * 5;
-
-// string length of a token
-const maxTokenLength = 8;
 
 var _userCredentials = {};
 
@@ -63,13 +64,8 @@ exports.start = function() {
  * @param response 
  */
 exports.renderDefaultWebPage = function (response)  {
-	try { 
-		response.send('Laurette - Server, thesis v0.001'
-					+ '<br> ' + Object.keys(_userCredentials).length + ' users logged in.');
-	}
-	catch( exception ) {
-		_logger.info(`renderDefaultWebPage caught exception: ${exception}`);
-	}
+	response.send('Laurette - Server, thesis v0.001'
+				+ '<br> ' + Object.keys(_userCredentials).length + ' users logged in.');
 }
 
 /** 
@@ -78,8 +74,7 @@ exports.renderDefaultWebPage = function (response)  {
  * @param request httpRequest made by the client, must contain a body.user and body.password
  * @param reponse httpResponse object used to respond to the client.
  */
-exports.login = function (request, response) {
-	_logger.info(getOrigin(request) + " logging in as " + request.body.user + ", " + request.body.password); 
+exports.login = function (request, response) {	
 	_readQueue.push( new WebOperation(loginOperation,  request,  response ));
 }
 
@@ -90,9 +85,10 @@ exports.login = function (request, response) {
  */
 exports.logout = function (request, response) {
 
- 	_logger.info(getOrigin(request) + " logging out with " + request.body.token); 
+	var origin = util.getOrigin(request);
+	var credentials = _userCredentials[request.body.token];
 
-	if (_userCredentials[request.body.token]) {
+	if (credentials && credentials.orders === origin) {
 		delete _userCredentials[request.body.token];
 	} 
 
@@ -105,11 +101,11 @@ exports.logout = function (request, response) {
  */
 exports.postOrder = function (request, response) {
 
-	_logger.info(getOrigin(request) + " post order with token = " + request.body.token); 
+	var origin = util.getOrigin(request);
 	
 	var credentials  = _userCredentials[request.body.token];
 	
-	if (request && request.body && credentials) {
+	if (request && request.body && credentials && credentials.origin === origin) {
 		// get the age of the token and see if it is still valid
 		var now = new Date();
 		var credentialsAge = (now.getTime() - credentials.date.getTime()) / 1000;
@@ -145,22 +141,17 @@ exports.postOrder = function (request, response) {
  * Send by the user to keep the token alive as well as to check the server status
  */
 exports.heartbeat = function(request, response) {
-	try {
-		_logger.info(getOrigin(request) + " heartbeat = " + request.body.token); 
-	
-		var credentials = _userCredentials[request.body.token];
+	const origin = util.getOrigin(request); 
 
-		if (credentials) {
-			// update the token's life
-			_userCredentials[request.body.token].date = new Date();
+	var credentials = _userCredentials[request.body.token];
 
-			sendAck(response, request.body.timeStamp);
-		} else {
-			sendErr(request, response, `no user with token ${request.body.token} logged in.`);
-		}
+	if (credentials && credentials.origin === origin) {
+		// update the token's life
+		_userCredentials[request.body.token].date = new Date();
 
-	} catch (exception) {
-		_logger.info(`heartbeat caught exception: ${exception}`);
+		sendAck(response, request.body.timeStamp);
+	} else {
+		sendErr(request, response, `no user with token ${request.body.token}/${origin} logged in.`);
 	}
 }
 
@@ -168,22 +159,15 @@ exports.heartbeat = function(request, response) {
  * Requests the data from a specific user 
  */
 exports.getUserOrders = function(request, response) {
-	try {
-		var userId = request.body.userId;
-		var adminName = request.body.adminName;
-		var password = request.body.password;
-		var origin = getOrigin(request);
+	var adminName = request.body.adminName;
+	var password = request.body.password;
 
-		_logger.info( `${origin} get user data with of user ${userId}, credentials = ${adminName}/${password}`); 
-	
-		if (adminName === _admin.name && password === _admin.password) {
-			_readQueue.push( new WebOperation(getUserOrdersOperation,  request,  response ));
-		} else {
-			sendErr(request, response, "credentials incorrect");
-		}
-	} catch (exception) {
-		_logger.info(`getUserData caught exception: ${exception}`);
-	}}
+	if (adminName === _admin.name && password === _admin.password) {
+		_readQueue.push( new WebOperation(getUserOrdersOperation,  request,  response ));
+	} else {
+		sendErr(request, response, "credentials incorrect");
+	}
+}
 
 // --- PRIVATE FUNCTIONS ----------------------------------------------------------------------------------------------
 
@@ -240,7 +224,7 @@ function flushReadQueue(queue, onCompleteCallback) {
 			};
 
 			if (operationName === loginOperation) {
-				loginUser(request.body.user, request.body.password, operationCallback);
+				loginUser(request.body.user, request.body.password, util.getOrigin(request), operationCallback);
 			} else if (operationName === getUserOrdersOperation) {
 				retrieveUserOrders(request.body.userId, operationCallback);
 			}
@@ -297,7 +281,7 @@ function flushWriteQueue(queue, onCompleteCallback) {
  * @param {*} message 
  */
 function sendErr(request, response, message) {
-	_logger.error(getOrigin(request) + ", error " + message);
+	_logger.error(util.getOrigin(request) + ", error " + message);
 			
 	response.statusMessage = message;
 	response.status(400).end();
@@ -312,57 +296,18 @@ function sendAck(response, timeStamp) {
 	response.send( '{"timeStamp": ' + timeStamp + ', "message": "ack"}' );
 }
 
-/**
- * Try to extract the source of request  
- * @param {*} request 
- */
-function getOrigin(request) {
-	var originSource = request.headers['x-forwarded-for'];
-
-	if (!originSource) {
-		originSource = request.connection.remoteAddress;
-	}
-
-	return originSource ? originSource : "unknown";
-}
-
 /** Check if the properties of the order are valid. If valid returns an empty string and a non-empty string otherwise */
 function validateOrderProperties( sessionId, timeStamp, itemList) {
 
-	return testIsInteger(sessionId, "sessionId") 
-			+ testIsInteger(timeStamp, "timeStamp") 
-			+ testIsNullOrArray(itemList, "itemList");
-}
-
-function testIsNullOrArray(array, propertyName) {
-
-	if (array) {
-		if (!Array.isArray(array)) {
-			return propertyName + " is not a valid array";
-		}
-	}
-
-	return "";
-}
-
-/*
- * Test if the given value is an integer, if not return a string representing containing the error.
- */
-function testIsInteger(value, propertyName) {
-	if (value === undefined) {
-		return "No " + propertyName + " provided.";
-	} else if (typeof(value) !== 'number') {
-		return propertyName + " is not a number.";
-	} else if (value % 1 !== 0) {
-		return propertyName + "  is not an integer.";
-	}
-	return "";
+	return util.testIsInteger(sessionId, "sessionId") 
+			+ util.testIsInteger(timeStamp, "timeStamp") 
+			+ util.testIsNullOrArray(itemList, "itemList");
 }
 
 /*
  * Login to the back-end using the given user name and password
  */
-function loginUser(name, password, callback) {
+function loginUser(name, password, origin, callback) {
 
 	_sessionDb.login(name, password, (err, userId) => {
 		if (err) {
@@ -370,10 +315,10 @@ function loginUser(name, password, callback) {
 		} else if (!userId) {
 			callback( -1, `user or password ${name} not found.` );
 		}  else {	
-			const token = generateToken(userId, name, password);
+			const token = util.generateToken(maxTokenLength, userId, name, password);
 
 			_logger.info(`assigning token ${token} to ${name}`);			
-			_userCredentials[token] = new UserCredentials(userId, token, new Date());
+			_userCredentials[token] = new UserCredentials(userId, origin, token, new Date());
 			tryRetrieveSessionAndTimeStamp(userId, token, callback);
 		}
 	});
@@ -396,7 +341,6 @@ function tryRetrieveSessionAndTimeStamp(userId, userToken, callback) {
 	});
 }
 
-
 function tryToRetrieveTimeStamp(userId, userToken, maxSession, callback) {
 	_sessionDb.getMaxTimeStamp(userId, maxSession, (err, maxTimeStamp) => {
 		if (err) {
@@ -409,18 +353,6 @@ function tryToRetrieveTimeStamp(userId, userToken, maxSession, callback) {
 			}
 		}
 	});
-}
-
-/** Generates a unique randomized token off the user id a*/
-function generateToken(id, user, password) {
-	var seed = id + "-" + user + "-" + password + "-" + new Date().getMilliseconds();
-	var rng = seedrandom(seed);
-	var token = "" + id;
-
-	for (var i = 0; i < maxTokenLength; i++) {
-		token += Math.floor(rng() * 10);	
-	}
-	return token;
 }
 
 function retrieveUserOrders(userId, callback) {

@@ -1,3 +1,8 @@
+/**
+ * Configures & runs the Postgres based Express server against the application specific back-end server. 
+ * Run with node postgres
+ */
+
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
@@ -6,10 +11,14 @@ const { MESSAGE } = require("triple-beam");
 const databaseAdapter = require('./postgres-adapter');
 const backendServerLogic = require('./back-end-server');
 const os = require('os');
+const util = require("./util.js");
+
+const tryInvoke = util.tryInvoke;
 
 const _hostName = os.hostname();
 const _isLocalHost = _hostName.indexOf("local") > -1 || _hostName.indexOf("DESKTOP") > -1;
 	
+// configure the Winston loggger
 const logger = winston.createLogger({
 	level: 'info',
 	format: winston.format.json(),
@@ -29,39 +38,40 @@ const logger = winston.createLogger({
 	]
   });
 
-
-
-function getDatabaseString() {
+  /**
+   * Returns the database string depending on whether or not we're running off the local host 
+   * on in the cloud
+   */
+function getDatabaseString(isLocalHost) {
 	var connectionString = "";
 	
-	if(_isLocalHost) {		
+	if(isLocalHost) {		
 		connectionString = 'postgresql://postgres:admin@localhost:5432/sessions';
 	} else {
 		connectionString = process.env.DATABASE_URL;
 	}
 
-	logger.info(`@${_hostName} Connecting to db via ${connectionString}`);
-
 	return connectionString; 
 }
 
 // configure the back-end logic
-logger.info(`connecting to database`);
+var connectionString = getDatabaseString(_isLocalHost);
+logger.info(`@${_hostName} Connecting to db via ${connectionString}`);
 
 backendServerLogic.config({
-	database: databaseAdapter.connect(getDatabaseString(), logger),
+	// note that the database connection is not tracked - if the connection fails somehow, the server
+	// will simply crash
+	database: databaseAdapter.connect(connectionString, logger),
 	logger: logger
-})
+});
 
+// configure cross origin resource sharing
 const whitleListDomain = ['http://localhost:8080', '213.127.49.114'];
 
 logger.info(`configuring CORS`);
 
 const corsSetup = cors({
 	origin: function(origin, callback){
-		logger.info(`origin check against ${origin}`);
-
-
 	  	if(!origin) return callback(null, true);
 	  	if(whitleListDomain.indexOf(origin) === -1){
 			var msg = 'The CORS policy for this site does not allow access from the specified Origin.';
@@ -84,17 +94,47 @@ if (_isLocalHost) {
 	app.use(corsSetup);
 }
 
-app.get('/', (req, res) => backendServerLogic.renderDefaultWebPage(res)); 
+app.get('/', (req, res) => 
+	tryInvoke(logger, "render default page", () => {
+		backendServerLogic.renderDefaultWebPage(res);
+	})
+);	
 
-app.post('/login', jsonParser, (req, res) => backendServerLogic.login(req, res));
+app.post('/login', jsonParser, (req, res) =>
+	tryInvoke(logger, "login", () =>  {
+		logger.info(util.getOrigin(req) + " logging in as " + req.body.user + ", " + req.body.password); 	
+		backendServerLogic.login(req, res);
+	})
+);
 
-app.post('/logout', jsonParser, (req, res) => backendServerLogic.logout(req, res));
+app.post('/logout', jsonParser, (req, res) =>
+	 tryInvoke(logger, "logout", () => {
+		logger.info(`${util.getOrigin(req)} logging out with ${req.body.token}`); 
+		backendServerLogic.logout(req, res);
+	 })
+);
 
-app.post('/post-order', jsonParser, (req, res) => backendServerLogic.postOrder(req, res));
+app.post('/post-order', jsonParser, (req, res) => 
+	tryInvoke(logger, "post order", () => {
+		logger.info(`${util.getOrigin(req)}  post order with token = ${req.body.token}`); 
+		backendServerLogic.postOrder(req, res);
+	})
+);
 
-app.post('/heartbeat', jsonParser, (req, res) => backendServerLogic.heartbeat(req, res));
+app.post('/heartbeat', jsonParser, (req, res) => 
+	tryInvoke(logger, "heartbeat", () => {
+		logger.info(`${util.getOrigin(req)} heartbeat = ${req.body.token}.`); 
+		backendServerLogic.heartbeat(req, res);
+	})
+);
 
-app.post('/get-user-orders', jsonParser, (req, res) => backendServerLogic.getUserOrders(req, res));
+app.post('/get-user-orders', jsonParser, (req, res) =>
+	tryInvoke(logger, "get user orders", () => {
+		logger.info( `${util.getOrigin(req)} get user data with of user ${req.body.userId},`
+					 + `credentials = ${req.body.adminName}/${req.body.password}`); 
+		backendServerLogic.getUserOrders(req, res);
+	})
+);
 
 // start the server logic
 backendServerLogic.start();
@@ -102,4 +142,5 @@ backendServerLogic.start();
 // start express
 app.set( 'port', ( process.env.PORT || 3000 ));
 app.listen(app.get( 'port' ), () => logger.info('Server running on port ' + app.get( 'port' )));
+
 
