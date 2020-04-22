@@ -16,6 +16,7 @@ const getUserOrdersOperation = "get-user-orders";
 const maxTokenAge = 60 * 5;
 
 var _userCredentials = {};
+var _loggedInUsers = {};
 
 // how often do we flush the read/write quuees 
 var _flushTimeout = 1000;
@@ -88,8 +89,9 @@ exports.logout = function (request, response) {
 	var origin = util.getOrigin(request);
 	var credentials = _userCredentials[request.body.token];
 
-	if (credentials && credentials.orders === origin) {
-		delete _userCredentials[request.body.token];
+	if (credentials && credentials.origin === origin) {
+		delete _userCredentials[credentials.token];
+		delete _loggedInUsers[credentials.userName];
 	} 
 
 	response.end();
@@ -315,10 +317,25 @@ function loginUser(name, password, origin, callback) {
 		} else if (!userId) {
 			callback( -1, `user or password ${name} not found.` );
 		}  else {	
-			const token = util.generateToken(maxTokenLength, userId, name, password);
+			if (_loggedInUsers[name]) {
+				// deal with a double log in. We're assuming that if someone has the correct user/pwd
+				// we can erase the old credentials. 
+				const oldCredentials = _loggedInUsers[name];
 
-			_logger.info(`assigning token ${token} to ${name}`);			
-			_userCredentials[token] = new UserCredentials(userId, origin, token, new Date());
+				if (_userCredentials[oldCredentials.token]) {
+					delete _userCredentials[oldCredentials.token];
+				}
+				
+				delete _loggedInUsers[name];
+			}
+		
+			const token = util.generateToken(maxTokenLength, userId, name, password);
+			const credentials = new UserCredentials(name, userId, origin, token, new Date());
+			_logger.info(`assigning token ${token} to ${name}`);	
+					
+			_userCredentials[token] = credentials;
+			_loggedInUsers[name] = credentials;
+		
 			tryRetrieveSessionAndTimeStamp(userId, token, callback);
 		}
 	});

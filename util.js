@@ -57,7 +57,7 @@ exports.generateToken = function(length, id, user, password) {
 	for (var i = 0; i < length; i++) {
 		token += Math.floor(rng() * 10);	
 	}
-	return token;
+	return id + "-" + token;
 }
 
 /**
