@@ -48,7 +48,7 @@ exports.config = function (config) {
 		};
 		_sessionDb = config.database;
 		_flushTimeout = config.timeout || 1000;
-		_admin = config.admin || { name : "admin", password : "__default" };
+		_admin = (config.admin && config.admin.name && config.admin.password) || { name : "admin", password : "__default" };
 	}
 }
 
@@ -127,15 +127,15 @@ exports.postOrder = function (request, response) {
 					sendAck(response, request.body.timeStamp);
 				}
 			} else {
-				sendErr(request, response, "post order with invalid values " + valuesErrors);
+				sendErr(request, response, "post order with invalid values " + valuesErrors, 400);
 			}
 
 		} else {
-			sendErr(request, response, "post order with outdated token, credentials=" + JSON.stringify(credentials));
+			sendErr(request, response, "post order with outdated token, credentials=" + JSON.stringify(credentials), 400);
 			delete _userCredentials[request.body.token];
 		}
 	} else {
-		sendErr(request, response, "invalid request or token provided (token="+ request.body.token +").");
+		sendErr(request, response, "invalid request or token provided (token="+ request.body.token +").", 400);
 	}
 }
 
@@ -153,7 +153,7 @@ exports.heartbeat = function(request, response) {
 
 		sendAck(response, request.body.timeStamp);
 	} else {
-		sendErr(request, response, `no user with token ${request.body.token}/${origin} logged in.`);
+		sendErr(request, response, `no user with token ${request.body.token}/${origin} logged in.`, 400);
 	}
 }
 
@@ -167,7 +167,7 @@ exports.getUserOrders = function(request, response) {
 	if (adminName === _admin.name && password === _admin.password) {
 		_readQueue.push( new WebOperation(getUserOrdersOperation,  request,  response ));
 	} else {
-		sendErr(request, response, "credentials incorrect");
+		sendErr(request, response, "credentials incorrect", 400);
 	}
 }
 
@@ -216,7 +216,7 @@ function flushReadQueue(queue, onCompleteCallback) {
 				if (errCode === 0) {
 					response.send(message);
 				} else {
-					sendErr(request, response, message);
+					sendErr(request, response, message, errCode);
 				}
 				outstandingOperations--;
 
@@ -282,11 +282,11 @@ function flushWriteQueue(queue, onCompleteCallback) {
  * @param {*} response 
  * @param {*} message 
  */
-function sendErr(request, response, message) {
+function sendErr(request, response, message, statusCode) {
 	_logger.error(util.getOrigin(request) + ", error " + message);
 			
 	response.statusMessage = message;
-	response.status(400).end();
+	response.status(statusCode || 400).end();
 }
 
 /**
@@ -313,9 +313,9 @@ function loginUser(name, password, origin, callback) {
 
 	_sessionDb.login(name, password, (err, userId) => {
 		if (err) {
-			callback( -1, `db error (err=${err}).`);
+			callback( 500, `db error (err=${err}).`);
 		} else if (!userId) {
-			callback( -1, `user or password ${name} not found.` );
+			callback( 400, `user or password ${name} not found.` );
 		}  else {	
 			if (_loggedInUsers[name]) {
 				// deal with a double log in. We're assuming that if someone has the correct user/pwd
@@ -361,7 +361,7 @@ function tryRetrieveSessionAndTimeStamp(userId, userToken, callback) {
 function tryToRetrieveTimeStamp(userId, userToken, maxSession, callback) {
 	_sessionDb.getMaxTimeStamp(userId, maxSession, (err, maxTimeStamp) => {
 		if (err) {
-			callback( -1, "error while retrieving max timestamp (err=" +err + ")." );
+			callback( 500, "error while retrieving max timestamp (err=" +err + ")." );
 		} else {
 			if (maxTimeStamp) {
 				callback( 0, JSON.stringify( new LoginResponse(userToken, maxSession, maxTimeStamp )));
@@ -376,7 +376,7 @@ function retrieveUserOrders(userId, callback) {
 
 	_sessionDb.getUserOrders(userId, (err, orders) => {
 		if (err) {
-			callback( -1, `db error (err=${err}).`);
+			callback( 500, `db error (err=${err}).`);
 		}  else {
 			callback( 0, JSON.stringify(orders));	
 		}

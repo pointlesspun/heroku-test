@@ -12,7 +12,7 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}\\postgres-server.js"
+            "program": "${workspaceFolder}\\mysql-server.js"
         }
     ]
 }
