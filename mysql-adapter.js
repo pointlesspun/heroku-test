@@ -42,10 +42,10 @@ exports.login = function(userName, password, callback) {
 	const sqlStatement = `select userId from users where name = '${userName}' and password = '${password}'`;
 
 	_database.query(sqlStatement, (err, res, fields) => {
-		if (err ) {
+		if (err) {
 			callback( -1, "db error (err=" + err+ ")." );
 		} else if (!res || res.length === 0) {
-			callback( -1, "user or password " + userName + " not found." );
+			callback();
 		}  else {	
 			callback( 0, res[0].userId);
 		}
