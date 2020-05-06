@@ -30,7 +30,7 @@ or
 
 ```node mysql-server.js```
 
-In the case of the latter, if succesfull the following will be output on std out (passwords, machine names.
+In the case of the latter, if successful the following will be output on std out (passwords, machine names.
 
 ```
 {"message":"@MACHINE-NAME Connecting to db via mysql://mysql-user:mysql-password@localhost:3306/laurette_db","level":"info"}

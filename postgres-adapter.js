@@ -41,7 +41,7 @@ exports.login = function(userName, password, callback) {
 		if (err ) {
 			callback( -1, "db error (err=" + err+ ")." );
 		} else if (!res || res.rows.length === 0) {
-			callback( -1, "user or password " + userName + " not found." );
+			callback();
 		}  else {	
 			callback( 0, res.rows[0].userid);
 		}
