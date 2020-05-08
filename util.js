@@ -47,6 +47,18 @@ exports.testIsInteger = function(value, propertyName) {
 	return "";
 }
 
+/*
+ * Test if the given value is a number, if not return a string representing containing the error.
+ */
+exports.testIsNumber = function(value, propertyName) {
+	if (value === undefined) {
+		return "No " + propertyName + " provided.";
+	} else if (typeof(value) !== 'number') {
+		return propertyName + " is not a number.";
+	} 
+	return "";
+}
+
 
 /** Generates a unique randomized token off the user id a*/
 exports.generateToken = function(length, id, user, password) {

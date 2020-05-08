@@ -17,3 +17,7 @@ Heroku works off a github repository for deployment.
 To push "git push heroku master"
 To start 
 To follow log "heroku logs --tail"
+
+install new users
+log in to the database from terminal 'heroku pg:psql'
+'delete from users;'

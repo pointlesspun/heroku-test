@@ -124,7 +124,7 @@ exports.postOrder = function (request, response) {
 					_writeQueue.push(new WebOperation("insert-order", request, response));
 				} else {
 					// empty array - don't bother inserting empty sets
-					sendAck(response, request.body.timeStamp);
+					sendAck(response, request.body.ackId);
 				}
 			} else {
 				sendErr(request, response, "post order with invalid values " + valuesErrors, 400);
@@ -151,7 +151,7 @@ exports.heartbeat = function(request, response) {
 		// update the token's life
 		_userCredentials[request.body.token].date = new Date();
 
-		sendAck(response, request.body.timeStamp);
+		sendAck(response);
 	} else {
 		sendErr(request, response, `no user with token ${request.body.token}/${origin} logged in.`, 400);
 	}
@@ -265,9 +265,9 @@ function flushWriteQueue(queue, onCompleteCallback) {
 				var req = msg.request;
 				
 				if (err) {
-					sendErr(req, res, '{"timeStamp": ' + req.body.timeStamp + ', "message": "' + err + '"}');
+					sendErr(req, res, '{"message": "' + err + '"}');
 				} else {
-					sendAck(res, req.body.timeStamp );
+					sendAck(res);
 				}
 			}
 			
@@ -292,17 +292,16 @@ function sendErr(request, response, message, statusCode) {
 /**
  * Send standardize ack message via the response
  * @param {*} response 
- * @param {*} timeStamp 
  */
-function sendAck(response, timeStamp) {
-	response.send( '{"timeStamp": ' + timeStamp + ', "message": "ack"}' );
+function sendAck(response) {
+	response.send( '{"message": "ack"}' );
 }
 
 /** Check if the properties of the order are valid. If valid returns an empty string and a non-empty string otherwise */
 function validateOrderProperties( sessionId, timeStamp, itemList) {
 
 	return util.testIsInteger(sessionId, "sessionId") 
-			+ util.testIsInteger(timeStamp, "timeStamp") 
+			+ util.testIsNumber(timeStamp, "timeStamp") 
 			+ util.testIsNullOrArray(itemList, "itemList");
 }
 
