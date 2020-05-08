@@ -8,26 +8,15 @@ const seedrandom = require('seedrandom');
  */
 exports.getOrigin = function(request) {
 	
-	console.log("request ip   '" + request.ip + "'  .\n");
-
-	if (request.headers) {
-		console.log("request hdrx '" + request.headers['x-forwarded-for'] + "'  .\n");
-	}
-
-	if (request.connection && request.connection.remoteAddress) {
-		console.log("request remote '" + request.connection.remoteAddress + "'  .\n");
-
-	}
-	
-	// in express this would return the ip
-	if (request.ip) {
-		return request.ip;
-	}
-
 	var originSource = request.headers['x-forwarded-for'];
 
-	if (!originSource) {
+	if (!originSource && request.connection) {
 		originSource = request.connection.remoteAddress;
+	}
+
+	// in express this would return the ip
+	if (!originSource && request.ip) {
+		return request.ip;
 	}
 
 	return originSource ? originSource : "unknown";
