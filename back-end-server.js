@@ -48,7 +48,8 @@ exports.config = function (config) {
 		};
 		_sessionDb = config.database;
 		_flushTimeout = config.timeout || 1000;
-		_admin = (config.admin && config.admin.name && config.admin.password) || { name : "admin", password : "__default" };
+        _admin = (config.admin && config.admin.name && config.admin.password)
+            ? config.admin : { name : "admin", password : "__default" };
 	}
 }
 
@@ -171,6 +172,46 @@ exports.getUserOrders = function(request, response) {
 	}
 }
 
+/**
+ * End-point for refreshing the DB
+ */
+exports.refresh_db = function ( request, response ) {
+    // Only allow admin
+    try {
+        var adminName = request.body.adminName;
+        var password = request.body.password;
+        if (adminName !== _admin.name || password !== _admin.password) {
+            sendErr( request, response, "credentials incorrect", 400 );
+            return;
+        }
+    }
+    catch (e) {
+        console.log(e);
+    }
+
+    // Runs script, pass outputs to user
+    const {exec} = require( 'child_process' );
+    exec( './refresh_db.sh',
+        ( error, stdout, stderr ) => {
+            let outputs = [];
+            if (stdout) {
+                outputs.push(`stdout: ${stdout}`);
+            }
+            if (stderr) {
+                outputs.push(`stderr: ${stderr}`);
+            }
+            if (error !== null) {
+                outputs.push(`error: ${error}`);
+            }
+
+            if (outputs.length === 0) {
+                outputs.push('OK');
+            }
+            response.send( outputs.join('<br/>') );
+        } );
+}
+
+
 // --- PRIVATE FUNCTIONS ----------------------------------------------------------------------------------------------
 
 /** 
@@ -244,8 +285,7 @@ function flushReadQueue(queue, onCompleteCallback) {
 function flushWriteQueue(queue, onCompleteCallback) {
 	if (queue.length === 0) {
 		onCompleteCallback();
-	}
-	else {
+  } else {
 		var valuesCollection = [];
 		
 		// combine all insert operations so we can do with only one insert call
