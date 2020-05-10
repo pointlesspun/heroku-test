@@ -117,7 +117,7 @@ exports.postOrder = function (request, response) {
 			// update the token's life
 			_userCredentials[request.body.token].date = now;
 
-			var valuesErrors = validateOrderProperties(request.body.sessionId, request.body.timeStamp, request.body.items);
+			var valuesErrors = validateOrderProperties(request.body.scene, request.body.timeStamp, request.body.items);
 
 			if (!valuesErrors) {
 				if (request.body.items && request.body.items.length > 0) {
@@ -254,7 +254,7 @@ function flushWriteQueue(queue, onCompleteCallback) {
 			var itemList = JSON.stringify(msgBody.items);
 			var credentials = _userCredentials[msgBody.token];
 
-			valuesCollection.push("(" + credentials.id + "," + msgBody.sessionId + "," + msgBody.timeStamp + ",'" + itemList + "')");			 
+			valuesCollection.push("(" + credentials.id + "," + msgBody.scene + "," + msgBody.timeStamp + ",'" + itemList + "')");			 
 		}
 
 		_sessionDb.insertValues(valuesCollection.join(), (err, msg) => {
@@ -298,9 +298,9 @@ function sendAck(response) {
 }
 
 /** Check if the properties of the order are valid. If valid returns an empty string and a non-empty string otherwise */
-function validateOrderProperties( sessionId, timeStamp, itemList) {
+function validateOrderProperties( scene, timeStamp, itemList) {
 
-	return util.testIsInteger(sessionId, "sessionId") 
+	return util.testIsInteger(scene, "sceneId") 
 			+ util.testIsNumber(timeStamp, "timeStamp") 
 			+ util.testIsNullOrArray(itemList, "itemList");
 }
@@ -335,21 +335,21 @@ function loginUser(name, password, origin, callback) {
 			_userCredentials[token] = credentials;
 			_loggedInUsers[name] = credentials;
 		
-			tryRetrieveSessionAndTimeStamp(userId, token, callback);
+			tryRetrieveSceneAndTimeStamp(userId, token, callback);
 		}
 	});
 }
 
-function tryRetrieveSessionAndTimeStamp(userId, userToken, callback) {
-	// get the last session the user was working on
-	_sessionDb.getMaxSession(userId, (err, maxSession) => {
+function tryRetrieveSceneAndTimeStamp(userId, userToken, callback) {
+	// get the last scene the user was working on
+	_sessionDb.getMaxScene(userId, (err, maxScene) => {
 		if (err) {
-			callback( -1, `error while retrieving max session (err= ${err} ).` );
+			callback( -1, `error while retrieving max scene (err= ${err} ).` );
 		} else { 
-			// does the user have a previously started session ?
-			if (maxSession) {
+			// does the user have a previously started scene ?
+			if (maxScene) {
 				// try to retrieve the last timestamp 
-				tryToRetrieveTimeStamp(userId, userToken, maxSession, callback);
+				tryToRetrieveTimeStamp(userId, userToken, maxScene, callback);
 			} else {
 				callback( 0, JSON.stringify( new LoginResponse(userToken, -1, -1 )));
 			}
@@ -357,15 +357,15 @@ function tryRetrieveSessionAndTimeStamp(userId, userToken, callback) {
 	});
 }
 
-function tryToRetrieveTimeStamp(userId, userToken, maxSession, callback) {
-	_sessionDb.getMaxTimeStamp(userId, maxSession, (err, maxTimeStamp) => {
+function tryToRetrieveTimeStamp(userId, userToken, maxScene, callback) {
+	_sessionDb.getMaxTimeStamp(userId, maxScene, (err, maxTimeStamp) => {
 		if (err) {
 			callback( 500, "error while retrieving max timestamp (err=" +err + ")." );
 		} else {
 			if (maxTimeStamp) {
-				callback( 0, JSON.stringify( new LoginResponse(userToken, maxSession, maxTimeStamp )));
+				callback( 0, JSON.stringify( new LoginResponse(userToken, maxScene, maxTimeStamp )));
 			} else {
-				callback( 0, JSON.stringify( new LoginResponse(userToken, maxSession, -1 )));
+				callback( 0, JSON.stringify( new LoginResponse(userToken, maxScene, -1 )));
 			}
 		}
 	});

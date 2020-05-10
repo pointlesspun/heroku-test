@@ -1,8 +1,8 @@
 
 module.exports = class LoginResponse {
-	constructor(token, session, timeStamp){
+	constructor(token, sceneId, timeStamp){
 		this.token = token;
-		this.session = session;
+		this.scene = sceneId;
 		this.timeStamp = timeStamp;
 	}
 }

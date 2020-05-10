@@ -8,6 +8,7 @@ const seedrandom = require('seedrandom');
  */
 exports.getOrigin = function(request) {
 	
+	// this returned the most reliable information on heroku
 	var originSource = request.headers['x-forwarded-for'];
 
 	if (!originSource && request.connection) {

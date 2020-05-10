@@ -1,7 +1,7 @@
 DROP DATABASE IF EXISTS laurette_db;
 create database laurette_db;
 use laurette_db;
-create table sessions(userId int, session int, timeStamp real, jsonText text);   
+create table gameData(userId int, scene int, timeStamp real, jsonText text);   
 create table users(userId int, name varchar(32), password varchar(32));
 insert into users values(1, "augmented1", "Q1Teasc");
 insert into users values(2, "augmented2", "m38koJt");

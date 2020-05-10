@@ -1,1 +1,1 @@
-web: node postgres-server.js
+web: node server.js ./postgres-adapter postgresql://postgres:admin@localhost:5432/laurette_db

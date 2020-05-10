@@ -1,7 +1,7 @@
 user: postgres
 pwd: admin
-createdb -U postgres sessions // create db for user postgres called sessions
-psql -U postgres sessions // login to sessions 
+createdb -U postgres laurette_db // create db for user postgres called sessions
+psql -U postgres laurette_db // login to sessions 
 
 start server, can be run from anywhere as the postgres bin is in the path
 pg_ctl -D "C:\Program Files\PostgreSQL\12\data" start // start server 
@@ -21,3 +21,13 @@ To follow log "heroku logs --tail"
 install new users
 log in to the database from terminal 'heroku pg:psql'
 'delete from users;'
+
+mysql -u mla256 -p
+mla256 admin_mla256
+mysql -u mla256 -p < "C:\Code\js\heroku-test\createmysqldb.sql"
+
+
+args for debugging with postgres
+"args": ["./postgres-adapter", "postgresql://postgres:admin@localhost:5432/laurette_db"]
+
+args for debugging with mysql

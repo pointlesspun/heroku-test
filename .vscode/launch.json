@@ -12,7 +12,8 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}\\postgres-server.js"
+            "program": "${workspaceFolder}\\server.js",
+            "args": ["./mysql-adapter", "mysql://mla256:admin_mla256@localhost:3306/laurette_db"]
         }
     ]
 }

@@ -2,9 +2,14 @@ const mysql = require('mysql');
 
 var _database;
 var _logger;
+var _userTableName;
+var _gameDataTableName;
 
-exports.connect = function(connectionString, logger) {
+exports.connect = function(connectionString, logger, userTableName, dataTableName) {
 	
+	_userTableName = userTableName ? userTableName : "users";
+	_gameDataTableName = dataTableName ? dataTableName : "gameData";
+
 	_logger = logger || {
 		info : (str) => console.log(str),
 		error : (str) => console.log(str)
@@ -39,7 +44,7 @@ exports.connect = function(connectionString, logger) {
 exports.login = function(userName, password, callback) {
 
 	// login the user
-	const sqlStatement = `select userId from users where name = '${userName}' and password = '${password}'`;
+	const sqlStatement = `select userId from ${_userTableName} where name = '${userName}' and password = '${password}'`;
 
 	_database.query(sqlStatement, (err, res, fields) => {
 		if (err) {
@@ -52,22 +57,22 @@ exports.login = function(userName, password, callback) {
 	});
 }
 
-exports.getMaxSession = function(userId, callback) {
-    // get the last session the user was working on
-    const sqlStatement = `select max(session) from sessions where userId = ${userId}`;
+exports.getMaxScene = function(userId, callback) {
+    // get the last scene the user was working on
+    const sqlStatement = `select max(scene) from ${_gameDataTableName} where userId = ${userId}`;
 
 	_database.query(sqlStatement, (err, result, fields) => {
 		if (err) {
-			callback( -1, "error while retrieving max session (err=" + err + ")." );
+			callback( -1, "error while retrieving max scene (err=" + err + ")." );
 		} else { 
-			callback(0, result[0]["max(session)"]);
+			callback(0, result[0]["max(scene)"]);
 		} 
 	});
 }
 
 
-exports.getMaxTimeStamp = function(userId, maxSession, callback) {
-    const sqlStatement = `select max(timeStamp) from sessions where userId = ${userId} and session = ${maxSession}`;
+exports.getMaxTimeStamp = function(userId, maxScene, callback) {
+    const sqlStatement = `select max(timeStamp) from ${_gameDataTableName} where userId = ${userId} and scene = ${maxScene}`;
     
     _database.query(sqlStatement, (err, result, fields) => {
 			if (err) {
@@ -83,7 +88,7 @@ exports.getMaxTimeStamp = function(userId, maxSession, callback) {
  * Insert the properties in a slot for the given user id.
  */
 exports.insertValues = function(valuesCollection, callback) {	
-	const sqlCall = `insert into sessions values ${valuesCollection}`;
+	const sqlCall = `insert into ${_gameDataTableName} values ${valuesCollection}`;
     
     _database.query(sqlCall, (err, results, fields) => {
 		if (err) {
@@ -95,7 +100,7 @@ exports.insertValues = function(valuesCollection, callback) {
 }
 
 exports.getUserOrders = function(userId, callback) {
-	const sqlCall = `select * from sessions where userId = ${userId}`;
+	const sqlCall = `select * from ${_gameDataTableName} where userId = ${userId}`;
     
     _database.query(sqlCall, (err, result, fields) => {
 		if (err) {

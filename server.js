@@ -1,14 +1,13 @@
 /**
- * Configures & runs the Mysql based Express server against the application specific back-end server. 
+ * Configures & runs the Postgres based Express server against the application specific back-end server. 
  * Run with node postgres
  */
-
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const winston = require('winston');
 const { MESSAGE } = require("triple-beam");
-const databaseAdapter = require('./mysql-adapter');
+const databaseAdapter = require(process.argv[2]);
 const backendServerLogic = require('./back-end-server');
 const os = require('os');
 const util = require("./util.js");
@@ -38,32 +37,17 @@ const logger = winston.createLogger({
 	]
   });
 
-  /**
-   * Returns the database string depending on whether or not we're running off the local host 
-   * on in the cloud
-   */
-function getDatabaseString(isLocalHost) {
-	var connectionString = "";
-	
-	if(isLocalHost) {		
-		connectionString = 'mysql://mla256:admin_mla256@localhost:3306/laurette_db';
-	} else {
-		connectionString = process.env.DATABASE_URL;
-	}
-
-	return connectionString; 
-}
+  
 
 // configure the back-end logic
-var connectionString = getDatabaseString(_isLocalHost);
-logger.info(`@${_hostName} Connecting to db via ${connectionString}`);
+var connectionString = process.argv[3];
+logger.info(`@${_hostName} Connecting using ${process.argv[2]} to db via ${connectionString}`);
 
 backendServerLogic.config({
 	// note that the database connection is not tracked - if the connection fails somehow, the server
 	// will simply crash
 	database: databaseAdapter.connect(connectionString, logger),
-	logger: logger,
-	admin: { name: process.env.GAME_ADMIN, password: process.env.GAME_ADMIN_PASSWORD }
+	logger: logger
 });
 
 // configure cross origin resource sharing
@@ -136,6 +120,8 @@ app.post('/get-user-orders', jsonParser, (req, res) =>
 		backendServerLogic.getUserOrders(req, res);
 	})
 );
+
+
 
 // start the server logic
 backendServerLogic.start();
