@@ -40,7 +40,7 @@ const logger = winston.createLogger({
   
 
 // configure the back-end logic
-var connectionString = process.argv[3];
+var connectionString = process.argv[3] || process.env.DATABASE_URL;
 logger.info(`@${_hostName} Connecting using ${process.argv[2]} to db via ${connectionString}`);
 
 backendServerLogic.config({
