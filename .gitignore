@@ -52,6 +52,7 @@ ExportedObj/
 *.opendb
 *.VC.db
 *.cache
+*.log
 
 # Unity3D generated meta files
 *.pidb.meta
@@ -74,29 +75,3 @@ crashlytics-build.properties
 # Temporary auto-generated Android Assets
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
-LocalBackEnd/.vscode/launch.json
-LocalBackEnd/EncodePwd.dll
-LocalBackEnd/EncodePwd.runtimeconfig.json
-LocalBackEnd/sessions.db
-LocalBackEnd/sqldiff.exe
-LocalBackEnd/sqlite3.def
-LocalBackEnd/sqlite3.dll
-LocalBackEnd/sqlite3.exe
-LocalBackEnd/sqlite3_analyzer.exe
-LocalBackEnd/test user.txt
-NodeJstest user.txt
-*.cache
-LocalBackEnd/StressTest/PostStressTest/bin/Debug/netcoreapp2.1/PostStressTest.dll
-*.cache
-LocalBackEnd/StressTest/PostStressTest/bin/*
-LocalBackEnd/StressTest/PostStressTest/obj/*
-*.log
-LocalBackEnd/StressTest/PostStressTest/obj/Debug/netcoreapp2.1/PostStressTest.dll
-LocalBackEnd/StressTest/PostStressTest/bin/Debug/netcoreapp2.1/PostStressTest.dll
-LocalBackEnd/StressTest/PostStressTest/bin/Debug/netcoreapp2.1/PostStressTest.dll
-LocalBackEnd/StressTest/PostStressTest/obj/Debug/netcoreapp2.1/PostStressTest.csprojAssemblyReference.cache
-LocalBackEnd/StressTest/PostStressTest/obj/Debug/netcoreapp2.1/PostStressTest.csproj.CoreCompileInputs.cache
-LocalBackEnd/StressTest/PostStressTest/bin/Debug/netcoreapp2.1/PostStressTest.dll
-*.cache
-LocalBackEnd/StressTest/PostStressTest/obj/Debug/netcoreapp2.1/PostStressTest.csprojAssemblyReference.cache
-LocalBackEnd/StressTest/PostStressTest/obj/Debug/netcoreapp2.1/PostStressTest.dll
