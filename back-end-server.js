@@ -120,7 +120,7 @@ exports.postOrder = function (request, response) {
 			var valuesErrors = validateOrderProperties(request.body.scene, request.body.timeStamp, request.body.items);
 
 			if (!valuesErrors) {
-				if (request.body.items && request.body.items.length > 0) {
+				if (request.body.items) {
 					_writeQueue.push(new WebOperation("insert-order", request, response));
 				} else {
 					// empty array - don't bother inserting empty sets

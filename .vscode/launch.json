@@ -13,7 +13,7 @@
                 "<node_internals>/**"
             ],
             "program": "${workspaceFolder}\\server.js",
-            "args": ["./mysql-adapter", "mysql://mla256:admin_mla256@localhost:3306/laurette_db"]
+            "args": ["./postgres-adapter", "postgresql://postgres:admin@localhost:5432/laurette_db"]
         }
     ]
 }

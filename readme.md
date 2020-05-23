@@ -2,21 +2,15 @@
 
 This directory contains the back-end code for Laurette van Zanten's thesis experiment. The experiment is based on a game which communicates the results to a back-end server. The back-end server is a Node.Js/Express stack with a MySQL or Postgres database adapter. 
 
-## Changelog 11 May 2020
-
-* Removed the separate servers (postgres-server and mysql-server) in favor of one server (server.js)
-* Changed timestamps in the schema to real values. 
-* Renamed 'session' to 'scene' in the db schema.
-* Updated the readme.
-* SQLite3 has been deprecated. 
-
 ## Dependencies & Configuration
 
 The following steps need to be taken in order to run the back-end server:
 
-* To run the back end make sure node-js, npm, mysql and/or postgres are installed. 
+* Clone the project from https://github.com/pointlesspun/laurette-back-end-ref
 
-* Perform an NPM install in the root directory of the project.
+* To run the back end make sure node-js, npm, mysql and/or postgres are installed. Visual studio code is highly recommend.
+
+* Perform an NPM install in the root directory of the project (type `npm install` on the command line).
 
 * Create a database.
   * MySql: Log in to the MySql server. Run mysql.exe in the bin  directory. Use the -U and -P parameters for the user / password.   
@@ -50,3 +44,35 @@ In the case of the latter, if successful the following will be output on std out
 {"message":"Server running on port 3000","level":"info"}
 {"message":"connection to database established at: Sat May 02 2020 14:39:32 GMT+0200 (Central European Summer Time)","level":"info"}
 ```
+## Connecting the client to the server
+
+First run the server as described above.  
+
+In Unity, to have the client send data to server there are some scenarios to consider:
+
+* When testing an individual scene (not starting the login) add a new game object with a `webcom` component. Set the following parameters:
+  * Url: http://localhost:3000
+  * User Name: tst1 (or any other valid user account -- don't use 'guest', 'guest' is actively ignored by the client)
+  * Password: test_pwd1
+  * Scene: whatever the scene build id is
+  * Make sure the object containing the webcom is tagged as "WebCom"
+  * Set the 'Login on start' option as true
+
+ * A webcom component may already be present in the gamestate object. If so, you'll only need to change the parameters as aforementioned.
+ 
+ * When testing the full game, simply start with the login screen no additional work should be required.  
+
+To see if the communication works, check the console. If no errors pop up the data should end up in the database.
+
+## changelog 24 May 2020
+
+* Expanded readme,
+* Non null, empty orders are now accepted in order to track progress
+
+## Changelog 11 May 2020
+
+* Removed the separate servers (postgres-server and mysql-server) in favor of one server (server.js)
+* Changed timestamps in the schema to real values. 
+* Renamed 'session' to 'scene' in the db schema.
+* Updated the readme.
+* SQLite3 has been deprecated. 
