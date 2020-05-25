@@ -21,7 +21,10 @@ const _isLocalHost = _hostName.indexOf("local") > -1 || _hostName.indexOf("DESKT
 // configure the Winston loggger
 const logger = winston.createLogger({
 	level: 'info',
-	format: winston.format.json(),
+	format: winston.format.combine(
+		winston.format.timestamp(),
+		winston.format.json()
+	),
 	transports: [
 	  new winston.transports.File({ filename: 'laurette-server.log' }),
 	  new winston.transports.Console({
@@ -136,6 +139,13 @@ app.post('/get-user-orders', jsonParser, (req, res) =>
 		backendServerLogic.getUserOrders(req, res);
 	})
 );
+
+app.post('/refresh_db', jsonParser, (req, res) =>
+	tryInvoke(logger, "refresh_db", () => {
+		backendServerLogic.refresh_db(req, res);
+	})
+);
+
 
 // start the server logic
 backendServerLogic.start();
