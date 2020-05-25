@@ -285,7 +285,7 @@ function flushReadQueue(queue, onCompleteCallback) {
 function flushWriteQueue(queue, onCompleteCallback) {
 	if (queue.length === 0) {
 		onCompleteCallback();
-  } else {
+  	} else {
 		var valuesCollection = [];
 		
 		// combine all insert operations so we can do with only one insert call
