@@ -66,7 +66,7 @@ exports.start = function() {
  * @param response 
  */
 exports.renderDefaultWebPage = function (response)  {
-	response.send('Laurette - Server, thesis pre-alpha, 11/5/2020 --'
+	response.send('Laurette - Server, thesis pre-alpha, 26/5/2020 --'
 				+ '<br> ' + Object.keys(_userCredentials).length + ' users logged in.');
 }
 

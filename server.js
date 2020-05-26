@@ -54,15 +54,19 @@ backendServerLogic.config({
 });
 
 // configure cross origin resource sharing
-const whitleListDomain = ['http://localhost:8080'];
+const whitleListDomain = ['http://localhost:8080', 
+		'https://laurettevanzanten.github.io/ARgame0526',
+		'https://laurettevanzanten.github.io'];
 
 logger.info(`configuring CORS`);
 
 const corsSetup = cors({
 	origin: function(origin, callback){
+		logger.info("cors check vs " + origin);
 	  	if(!origin) return callback(null, true);
 	  	if(whitleListDomain.indexOf(origin) === -1){
 			var msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+			logger.error(msg);
 			return callback(new Error(msg), false);
 		  }
 	
