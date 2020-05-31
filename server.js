@@ -80,11 +80,7 @@ const app = express();
 
 const jsonParser = bodyParser.json({limit: '1mb'});
 
-// setup Cross Domain calls - this is only relevant (at the time of writing) for the local host build
-// the Heroku build doesn't need this
-//if (_isLocalHost) {
-	app.use(corsSetup);
-//}
+app.use(corsSetup);
 
 app.get('/', (req, res) => 
 	tryInvoke(logger, "render default page", () => {

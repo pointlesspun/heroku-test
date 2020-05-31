@@ -144,18 +144,14 @@ exports.postOrder = function (request, response) {
  * Send by the user to keep the token alive as well as to check the server status
  */
 exports.heartbeat = function(request, response) {
-	const origin = util.getOrigin(request); 
-
-	var credentials = _userCredentials[request.body.token];
+	var credentials = request.body.token ? _userCredentials[request.body.token] : null;
 
 	if (credentials && credentials.origin === origin) {
 		// update the token's life
-		_userCredentials[request.body.token].date = new Date();
+		credentials.date = new Date();
+	} 
 
-		sendAck(response);
-	} else {
-		sendErr(request, response, `no user with token ${request.body.token}/${origin} logged in.`, 400);
-	}
+	sendAck(response);
 }
 
 /** 
