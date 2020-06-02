@@ -29,11 +29,11 @@ The following steps need to be taken in order to run the back-end server:
 
 Both the Postgres and MySQL server are run off one and them same implementation, . To run the server and assuming all dependencies are in place (npm, node, mysql or postgres) type on the commandline:
 
-```node server.js postgres-adapter postgresql://postgres_user:postgres_admin@localhost:5432/laurette_db``` 
+```node server.js ./postgres-adapter.js postgresql://postgres_user:postgres_admin@localhost:5432/laurette_db``` 
 
 or 
 
-```node server.js mysql-adapter mysql://mysql_user:mysql_admin@localhost:3306/laurette_db```
+```node server.js ./mysql-adapter.js mysql://mysql_user:mysql_admin@localhost:3306/laurette_db```
 
 In the case of the latter, if successful the following will be output on std out:
 
@@ -51,7 +51,7 @@ First run the server as described above.
 In Unity, to have the client send data to server there are some scenarios to consider:
 
 * When testing an individual scene (not starting the login) add a new game object with a `webcom` component. Set the following parameters:
-  * Url: http://localhost:3000
+  * Url: http://localhost:3000 (make sure there is no trailing slash)
   * User Name: tst1 (or any other valid user account -- don't use 'guest', 'guest' is actively ignored by the client)
   * Password: test_pwd1
   * Scene: whatever the scene build id is
@@ -63,6 +63,11 @@ In Unity, to have the client send data to server there are some scenarios to con
  * When testing the full game, simply start with the login screen no additional work should be required.  
 
 To see if the communication works, check the console. If no errors pop up the data should end up in the database.
+
+## Misc
+
+ * Download the postgres db game data table  `\COPY gamedata TO 'gamedata_export.csv' WITH (FORMAT csv, DELIMITER ',',  HEADER true);`
+
 
 ## changelog 24 May 2020
 
