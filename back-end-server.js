@@ -145,11 +145,15 @@ exports.postOrder = function (request, response) {
  */
 exports.heartbeat = function(request, response) {
 	var credentials = request.body.token ? _userCredentials[request.body.token] : null;
+	var origin = util.getOrigin(request);
 
 	if (credentials && credentials.origin === origin) {
 		// update the token's life
 		credentials.date = new Date();
-	} 
+	} else {
+		_logger.info("cannot update token's life time for credentials " + 
+						JSON.stringify(credentials) + " against origin " + origin );
+	}
 
 	sendAck(response);
 }
